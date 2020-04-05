@@ -1,11 +1,25 @@
 from collections import Counter
 from ioUtils import getFile, saveFile
+from os import getcwd
+from os.path import join
+from sys import prefix
 
 class myMusicDBMap():
-    def __init__(self):
-        self.mapname  = "myMusicMap.p"
+    def __init__(self, debug=False):
+        if debug:
+            print("Creating myMusicDBMap()")
+        print(getcwd())
+        
+
+        self.mapname  = join(prefix, 'musicdb', 'myMusicMap.p')
+        if debug:
+            print("   Loading my music db map: {0}".format(self.mapname))
         self.musicmap = getFile(ifile=self.mapname)
-        self.dbkeys   = ["Discogs", "AllMusic", "MusicBrainz", "AceBootlegs", "RateYourMusic", "LastFM", "DatPiff", "RockCorner"]
+        self.dbkeys   = ["Discogs", "AllMusic", "MusicBrainz", "AceBootlegs", "RateYourMusic", "LastFM", "DatPiff", "RockCorner", "CDandLP", "MusicStack"]
+        if debug:
+            print("   DB keys: {0}".format(self.dbkeys))
+        if debug:
+            self.show()
 
         
     def get(self):
@@ -29,7 +43,7 @@ class myMusicDBMap():
         if musicmap is None:
             musicmap = self.musicmap
         cntrs = Counter()
-        for db in getDBs():
+        for db in self.getDBs():
             cntrs[db] += 0
         for myArtistName, myArtistData in musicmap.items():
             for dbkey in self.dbkeys:

@@ -1,10 +1,38 @@
 from distutils.core import setup
 import setuptools
+import pkg_resources
+import os
+import sys
+from shutil import copyfile
+from setuptools.command.install import install
 
+        
+class InstallWrapper(install):
+
+  def run(self):
+    # Run this first so the install stops in case 
+    # these fail otherwise the Python package is
+    # successfully installed
+    self._copy_web_server_files()
+    # Run the standard PyPi copy
+    install.run(self)
+
+  def _copy_web_server_files(self):
+    # Check to see we are running as a non-prv
+    targetFile = os.path.join(sys.prefix, 'musicdb', 'myMusicMap.p')
+    localFile  = "myMusicMap.p"    
+    print("===> Copying [{0}] to [{1}] to avoid overwritting the subsequent reverse copy".format(targetFile, localFile))
+    copyfile(src=targetFile, dst=localFile)
+    
+
+    
 setup(
   name = 'musicdb',
   py_modules = ['myMusicDBMap'],
+  scripts=["say_hello.py"],
+  cmdclass={'install': InstallWrapper},
   version = '0.0.1',
+  data_files = [(os.path.join(sys.prefix, 'musicdb'), ['myMusicMap.p'])],
   description = 'A Python Wrapper for Music DB Data',
   long_description = open('README.md').read(),
   author = 'Thomas Gadfort',
@@ -23,4 +51,3 @@ setup(
   install_requires=['jupyter_contrib_nbextensions'],
   dependency_links=[]
 )
- 
