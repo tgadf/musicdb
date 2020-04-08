@@ -28,7 +28,7 @@ class InstallWrapper(install):
     
 setup(
   name = 'musicdb',
-  py_modules = ['myMusicDBMap'],
+  py_modules = ['myMusicDBMap', 'artistDB'],
   cmdclass={'install': InstallWrapper},
   version = '0.0.1',
   data_files = [(os.path.join(sys.prefix, 'musicdb'), ['myMusicMap.p'])],

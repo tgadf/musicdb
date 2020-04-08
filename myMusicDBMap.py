@@ -16,6 +16,7 @@ class myMusicDBMap():
 
         self.mapname  = join(prefix, 'musicdb', 'myMusicMap.p')
         self.dbkeys   = ["Discogs", "AllMusic", "MusicBrainz", "AceBootlegs", "RateYourMusic", "LastFM", "DatPiff", "RockCorner", "CDandLP", "MusicStack"]
+        self.dbkeys   = ["AllMusic", "MusicBrainz"]
         self.dbdata   = {}
         
         if debug:
@@ -133,6 +134,29 @@ class myMusicDBMap():
         for db,dbdata in artistData.items():
             print("   {0: <15}: {1}".format(db,dbdata))
         
+            
+            
+    ########################################################################################################
+    #
+    # Get Artist Data
+    #
+    ########################################################################################################
+    def getArtistIDs(self, artistName, num=10, cutoff=0.7, debug=False):
+        artistIDs = {db: self.dbdata[db].getArtistIDs(artistName, num, cutoff, debug=debug) for db in self.getDBs()}
+        return artistIDs
+        
+            
+            
+    ########################################################################################################
+    #
+    # Get Artist Album Data
+    #
+    ########################################################################################################
+    def getArtistAlbums(self, artistName, num=10, cutoff=0.7, debug=False):
+        artistAlbums = {}
+        artistIDs    = getArtistIDs(artistName, num=None)
+        return artistIDs
+        
         
         
     ####################################################################################################
@@ -159,7 +183,8 @@ class myMusicDBMap():
             
         if self.debug:
             print("Getting Database Data For {0}".format(db))
-        return artistDB(db, debug=self.debug)
+        dbdata = artistDB(db, debug=self.debug)
+        return dbdata
     
         
     def getFullDBData(self):

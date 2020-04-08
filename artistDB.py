@@ -1,5 +1,6 @@
 from discogsBase import discogs
 from masterdb import getArtistAlbumsDB
+from searchUtils import findNearest
 from pandas import DataFrame
 
 
@@ -79,10 +80,37 @@ class artistDB():
         except:
             raise ValueErrors("Error getting Albums from Artist Albums Database")
         
-        try:
-            self.Nalbums = sum([[len(v2) for v2 in v.values()][0] for k,v in self.albumsDB.items()])
-        except:
-            self.Nalbums = 0
+            
+            
+    ########################################################################################################
+    #
+    # Get Artist Data
+    #
+    ########################################################################################################
+    def getArtistIDs(self, artistName, num=10, cutoff=0.7, debug=False):
+        artistIDs = {}
+        if self.artistNameToID.get(artistName) is not None:
+            artistIDs[artistName] = self.artistNameToID[artistName]
+            return artistIDs
+        elif num is None or cutoff is None:
+            return {}
+        else:
+            nearArtists = findNearest(artistName, self.getArtists(), num=num, cutoff=cutoff)
+            if debug:
+                print("Nearest Matches for: {0}".format(artistName))
+            for nearArtist in nearArtists:
+                artistIDs[nearArtist] = self.artistNameToID[nearArtist]
+            return artistIDs
+        
+        return artistIDs
+    
+    
+    def getArtistAlbums(self, artistID):
+        if self.albumsDB.get(artistID) is None:
+            print("Artist ID [{0}] is not found in Albums DB [{1}]".format(artistID, self.db))
+            return {}
+        return self.albumsDB[artistID]
+
             
             
     ########################################################################################################
@@ -90,10 +118,26 @@ class artistDB():
     # Summarize Artist Data
     #
     ########################################################################################################
+    def getArtists(self):
+        return self.artists
+    
+    def getNartistIDs(self):
+        return len(self.artistIDToName)
+
+    def getNartistNames(self):
+        return len(self.artistNameToID)
+    
+    def getNalbums(self):
+        try:
+            nAlbums = sum([[len(v2) for v2 in v.values()][0] for k,v in self.albumsDB.items()])
+        except:
+            nAlbums = 0
+        return nAlbums
+    
+    
+    
     def summary(self):
         print("Summary Statistics For DB: {0}".format(self.db))
-        print("    Found {0} Artists in DB".format(len(self.artists)))
-        print("    Found {0} ID -> Name entries".format(len(self.artistIDToName)))
-        print("    Found {0} Name -> ID entries".format(len(self.artistNameToID)))
-        print("    Found {0} Artists with Albums".format(len(self.albumsDB)))        
-        print("    Found {0} Albums".format(self.Nalbums))
+        print("    Found {0} ID -> Name entries".format(self.getNartistIDs()))
+        print("    Found {0} Name -> ID entries".format(self.getNartistNames()))
+        print("    Found {0} Albums".format(self.getNalbums()))
