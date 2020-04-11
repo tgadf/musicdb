@@ -90,9 +90,13 @@ class artistDB():
     def getArtistIDs(self, artistName, num=10, cutoff=0.7, debug=False):
         artistIDs = {}
         if self.artistNameToID.get(artistName) is not None:
+            if debug is True:
+                print("\tReturning ArtistIDs for Found ArtistName: {0}".format(artistName))
             artistIDs[artistName] = self.artistNameToID[artistName]
             return artistIDs
         elif num is None or cutoff is None:
+            if debug is True:
+                print("\tReturning Nothing Because Artist: {0} Was Not Found".format(artistName))
             return {}
         else:
             nearArtists = findNearest(artistName, self.getArtists(), num=num, cutoff=cutoff)
@@ -105,11 +109,41 @@ class artistDB():
         return artistIDs
     
     
-    def getArtistAlbums(self, artistID):
+    def getArtistAlbums(self, artistID, flatten=False):
         if self.albumsDB.get(artistID) is None:
             print("Artist ID [{0}] is not found in Albums DB [{1}]".format(artistID, self.db))
             return {}
+        
+        if flatten is True:
+            return self.flattenedArtistAlbums(self.albumsDB[artistID])
         return self.albumsDB[artistID]
+    
+
+    def flattenedArtistAlbums(self, vals):
+        if vals is None:
+            return []
+        if isinstance(vals, dict):
+            albums = []
+            for k,v in vals.items():
+                if isinstance(v, dict):
+                    for k2, v2 in v.items():
+                        albums.append(v2)
+                elif isinstance(v, list):
+                    for v2 in v:
+                        albums.append(v2)
+                else:
+                    raise ValueError("Need either a dict or list in flattenedArtistAlbums()")
+            return list(set(albums))
+        if isinstance(vals, list):
+            albums = []
+            for v in vals():
+                if isinstance(v, list):
+                    for v2 in v:
+                        albums.append(v2)
+                else:
+                    raise ValueError("Need a list in flattenedArtistAlbums()")
+            return list(set(albums))
+        return []
 
             
             

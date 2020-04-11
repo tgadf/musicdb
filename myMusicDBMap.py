@@ -15,8 +15,9 @@ class myMusicDBMap():
         
 
         self.mapname  = join(prefix, 'musicdb', 'myMusicMap.p')
-        self.dbkeys   = ["Discogs", "AllMusic", "MusicBrainz", "AceBootlegs", "RateYourMusic", "LastFM", "DatPiff", "RockCorner", "CDandLP", "MusicStack"]
-        self.dbkeys   = ["AllMusic", "MusicBrainz"]
+        self.dbkeys   = ["Discogs", "AllMusic", "MusicBrainz", "AceBootlegs", "RateYourMusic", "LastFM", "DatPiff", "RockCorner", "CDandLP", "MusicStack", "MetalStorm"]
+        #self.dbkeys   = ["AllMusic", "MusicBrainz"]
+        #self.dbkeys   = ["AllMusic"]
         self.dbdata   = {}
         
         if debug:
@@ -31,8 +32,12 @@ class myMusicDBMap():
             
         if debug:
             self.show()
-
-        
+            
+            
+    def setDBs(self, dbs):
+        self.dbkeys = dbs
+            
+            
     def get(self):
         if self.debug:
             print("Found {0} artist entries".format(len(self.musicmap)))
@@ -72,10 +77,16 @@ class myMusicDBMap():
         #self.saveMyMusicMap()
         
         
+    def addArtist(self, artistName):
+        if self.musicmap.get(artistName) is None:
+            print("Adding Artist {0}".format(artistName))
+            self.musicmap[artistName] = {db: None for db in self.getDBs()}
+            print("\t",self.musicmap[artistName])
+        
+        
     def add(self, artistName, dbName, artistID):
         if self.musicmap.get(artistName) is None:
-            print("Artist [{0}] is not a key in the Music Map".format(artistName))
-            return
+            self.addArtist(artistName)
         dbData = self.musicmap[artistName].get(dbName)
         if dbData is None:
             print("Adding Database [{0}] to DB list for [{1}]".format(dbName, artistName))
@@ -142,6 +153,11 @@ class myMusicDBMap():
     #
     ########################################################################################################
     def getArtistIDs(self, artistName, num=10, cutoff=0.7, debug=False):
+        if not all([self.dbdata.get(db) for db in self.getDBs()]):
+            self.getFullDBData()
+                    
+        if debug:
+            print("  Getting DB Artist IDs for ArtistName: {0}".format(artistName))
         artistIDs = {db: self.dbdata[db].getArtistIDs(artistName, num, cutoff, debug=debug) for db in self.getDBs()}
         return artistIDs
         
@@ -152,10 +168,45 @@ class myMusicDBMap():
     # Get Artist Album Data
     #
     ########################################################################################################
+    def getArtistAlbumsFromID(self, db, artistID):
+        if not all([self.dbdata.get(db) for db in self.getDBs()]):
+            self.getFullDBData()
+        artistAlbums = self.dbdata[db].getArtistAlbums(artistID)
+        return artistAlbums
+    
+    
     def getArtistAlbums(self, artistName, num=10, cutoff=0.7, debug=False):
+        if not all([self.dbdata.get(db) for db in self.getDBs()]):
+            self.getFullDBData()
+        
+        import json
+        print("  Getting Artist Albums for ArtistName: {0}".format(artistName))
         artistAlbums = {}
-        artistIDs    = getArtistIDs(artistName, num=None)
-        return artistIDs
+        artistIDs    = self.getArtistIDs(artistName, num=num, cutoff=cutoff, debug=debug)
+        if debug is True:
+            print("Found Artist IDs")
+            print(artistIDs)
+        for db,NameIDs in artistIDs.items():
+            artistAlbums[db] = {}
+            for name,IDs in NameIDs.items():
+                artistAlbums[db][name] = {artistID: self.dbdata[db].getArtistAlbums(artistID) for artistID in IDs}
+                
+        if debug:
+            print("ArtistAlbums({0}) Results".format(artistName))
+            for db,nameData in artistAlbums.items():
+                print("="*150)
+                print("  DB: {0}".format(db))
+                for name,IDsData in nameData.items():
+                    print("    Name: {0}".format(name))
+                    for ID,albums in IDsData.items():
+                        print("      ID: {0}".format(ID))
+                        for mediaType,mediaData in albums.items():
+                            albums = list(mediaData.values())
+                            print("          -----> {0: <20} :: {1}\t{2}".format(mediaType, len(albums), json.dumps(albums)))
+                        print("\n")
+                    print("\n\n")
+                        
+        return artistAlbums
         
         
         
