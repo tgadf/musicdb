@@ -68,11 +68,20 @@ class myMusicDBMap():
                     cntrs[dbkey] += 1
         print(cntrs)
         
-        
 
     def initKey(self, dbKey):
         for myArtistName in self.musicmap.keys():
             self.musicmap[myArtistName][dbKey] = None
+        return self.musicmap
+        #self.saveMyMusicMap()
+        
+
+    def rmKey(self, dbKey):
+        for myArtistName in self.musicmap.keys():
+            try:
+                del self.musicmap[myArtistName][dbKey]
+            except:
+                continue
         return self.musicmap
         #self.saveMyMusicMap()
         
@@ -135,6 +144,20 @@ class myMusicDBMap():
         return self.musicmap[artistName][db]
     
     
+    def getArtistDataIDs(self, artistName):
+        if self.musicmap.get(artistName) is None:
+            return {}        
+        
+        retval = {}
+        for db,dbdata in self.musicmap[artistName].items():
+            try:
+                ID = dbdata["ID"]
+            except:
+                ID = None
+            retval[db] = ID
+        return retval
+    
+    
     def getArtists(self):
         return list(self.musicmap.keys())
     
@@ -161,17 +184,27 @@ class myMusicDBMap():
         artistIDs = {db: self.dbdata[db].getArtistIDs(artistName, num, cutoff, debug=debug) for db in self.getDBs()}
         return artistIDs
         
-            
+        
+    def getArtistDBIDs(self, artistName, db, num=10, cutoff=0.7, debug=False):
+        if self.dbdata.get(db) is None:
+            self.getFullDBData()
+                    
+        if debug:
+            print("  Getting DB Artist IDs for ArtistName: {0}".format(artistName))
+        artistIDs = self.dbdata[db].getArtistIDs(artistName, num, cutoff, debug=debug)
+        return artistIDs
+        
+        
             
     ########################################################################################################
     #
     # Get Artist Album Data
     #
     ########################################################################################################
-    def getArtistAlbumsFromID(self, db, artistID):
+    def getArtistAlbumsFromID(self, db, artistID, flatten=False):
         if not all([self.dbdata.get(db) for db in self.getDBs()]):
             self.getFullDBData()
-        artistAlbums = self.dbdata[db].getArtistAlbums(artistID)
+        artistAlbums = self.dbdata[db].getArtistAlbums(artistID, flatten=flatten)
         return artistAlbums
     
     
