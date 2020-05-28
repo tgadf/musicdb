@@ -260,19 +260,34 @@ class myMusicDBMap():
     # Database Section
     #
     ####################################################################################################
-    def getDBData(self, db):
+    def getSubsetData(self, dbname):
+        mydbdata = {artistName: db.get(dbname) for artistName, db in self.musicmap.items() if db.get(dbname) is not None}
+        mydbdata = {artistName: dbdata.get("ID") for artistName, dbdata in mydbdata.items() if dbdata.get("ID") is not None}
+        return mydbdata
+
+        
+    def getDBData(self, db, known=False):
         if db not in self.getDBs():
             raise ValueError("Nothing known about DB [{0}]".format(db))
             
         if self.debug:
             print("Getting Database Data For {0}".format(db))
-        dbdata = artistDB(db, debug=self.debug)
+            
+        if known is True:
+            print("Loading Subset of Database Data For {0}".format(db))
+            
+        dbdata = artistDB(db, known=known, debug=self.debug)
         return dbdata
     
         
     def getFullDBData(self):
         for db in self.getDBs():
-            self.dbdata[db] = self.getDBData(db)
+            self.dbdata[db] = self.getDBData(db, known=False)
+    
+        
+    def getKnownDBData(self):
+        for db in self.getDBs():
+            self.dbdata[db] = self.getDBData(db, known=True)
         
         
         

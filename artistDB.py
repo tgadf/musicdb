@@ -10,7 +10,7 @@ from pandas import DataFrame
 #
 ########################################################################################################
 class artistDB():
-    def __init__(self, db, debug=False):
+    def __init__(self, db, known=False, debug=False):
         self.db    = db
         self.debug = debug
         if debug:
@@ -27,8 +27,16 @@ class artistDB():
         self.artistNameToID = None
         self.artistAlbumsDB = None
         self.Nalbums        = None
+        self.known          = known
+        if debug:
+            if self.known is True:
+                print("Only Getting Known Artist DB Data")
+            else:
+                print("Getting All Artist DB Data")
+        
         
         self.setArtistIDMap()
+        return
         self.setAlbumIDMap()
         self.summary()
             
@@ -42,7 +50,11 @@ class artistDB():
         if self.debug:
             print("  Getting Master Artist DB File ({0})".format(self.db))
 
-        self.discdf  = self.disc.getMasterSlimArtistDiscogsDB()
+        if self.known is True:
+            self.discdf  = self.disc.getMasterKnownSlimArtistDiscogsDB()
+        else:
+            self.discdf  = self.disc.getMasterSlimArtistDiscogsDB()
+            
         self.artists = [x for x in list(self.discdf["DiscArtist"]) if x is not None]
         if self.debug:
             print("    Found {0} Artists in DB".format(len(self.artists)))
@@ -52,6 +64,8 @@ class artistDB():
         if self.debug:
             print("    Found {0} ID -> Name entries".format(len(self.artistIDToName)))
 
+        if self.known is True:
+            print("    Only loading a subset of known artists into memory.")
         for artistID,artistName in self.artistIDToName.items():
             if artistName is None:
                 continue
@@ -172,6 +186,7 @@ class artistDB():
     
     def summary(self):
         print("Summary Statistics For DB: {0}".format(self.db))
+        print("    Using Known Artists: {0}".format(self.known))
         print("    Found {0} ID -> Name entries".format(self.getNartistIDs()))
         print("    Found {0} Name -> ID entries".format(self.getNartistNames()))
         print("    Found {0} Albums".format(self.getNalbums()))

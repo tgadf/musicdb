@@ -1,3 +1,5 @@
+from matchAlbums import matchAlbums
+
 def searchForMutualArtistDBEntries(mdb, artistName, num=2, cutoff=0.8, debug=[None]):
     retval     = {}
 
@@ -44,7 +46,7 @@ def searchForMutualArtistDBEntries(mdb, artistName, num=2, cutoff=0.8, debug=[No
             for dbArtistID in dbArtistIDs:
                 dbArtistIDAlbums = mdb.getArtistAlbumsFromID(db, dbArtistID, flatten=True)
                                 
-                ma = matchAlbums()
+                ma = matchAlbums(name="{0}-{1}".format(db,dbArtistName))
                 ma.match(knownArtistAlbums, dbArtistIDAlbums)
                 if "ID" in debug or "Full" in debug:
                     print("\t\t{0: <45}{1}\t{2}\t{3}\t{4}".format(dbArtistID, len(dbArtistIDAlbums), ma.near, ma.score, ma.maxval))
