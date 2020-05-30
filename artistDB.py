@@ -1,7 +1,7 @@
 from discogsBase import discogs
 from masterdb import getArtistAlbumsDB
 from searchUtils import findNearest
-from pandas import DataFrame
+from pandas import DataFrame, Series
 
 
 ########################################################################################################
@@ -23,6 +23,7 @@ class artistDB():
             
         self.discdf         = None
         self.artists        = None
+        self.albumsDB       = None
         self.artistIDToName = None
         self.artistNameToID = None
         self.artistAlbumsDB = None
@@ -36,7 +37,6 @@ class artistDB():
         
         
         self.setArtistIDMap()
-        return
         self.setAlbumIDMap()
         self.summary()
             
@@ -65,7 +65,8 @@ class artistDB():
             print("    Found {0} ID -> Name entries".format(len(self.artistIDToName)))
 
         if self.known is True:
-            print("    Only loading a subset of known artists into memory.")
+            if self.debug is True:
+                print("    Only loading a subset of known artists into memory.")
         for artistID,artistName in self.artistIDToName.items():
             if artistName is None:
                 continue
@@ -85,14 +86,26 @@ class artistDB():
         if self.debug:
             print("  Getting Master Artist Album DB File ({0})".format(self.db))
             
-        self.albumsDB = getArtistAlbumsDB(self.disc, force=False).to_dict()
+        if self.known is True:
+            self.albumsDB = self.disc.getMasterKnownArtistAlbumsDiscogsDB()
+        else:
+            self.albumsDB = self.disc.getMasterArtistAlbumsDiscogsDB()
+            
         if self.debug:
+            if self.known is True:
+                print("    Only loading a subset of known artists into memory.")
             print("    Found {0} Artist Albums".format(len(self.albumsDB)))
             
+        if isinstance(self.albumsDB, DataFrame):
+            if self.albumsDB.shape[0] == 0:
+                self.albumsDB = Series()
+                self.albumsDB.name = "Albums"
+                return
+           
         try:
             self.albumsDB = self.albumsDB["Albums"]
         except:
-            raise ValueErrors("Error getting Albums from Artist Albums Database")
+            raise ValueError("Error getting Albums from Artist Albums Database")
         
             
             
@@ -124,6 +137,9 @@ class artistDB():
     
     
     def getArtistAlbums(self, artistID, flatten=False):
+        if self.albumsDB is None:
+            raise ValueError("Artist Albums not set!")
+            
         if self.albumsDB.get(artistID) is None:
             print("Artist ID [{0}] is not found in Albums DB [{1}]".format(artistID, self.db))
             return {}

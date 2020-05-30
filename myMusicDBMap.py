@@ -274,7 +274,8 @@ class myMusicDBMap():
             print("Getting Database Data For {0}".format(db))
             
         if known is True:
-            print("Loading Subset of Database Data For {0}".format(db))
+            if self.debug is True:
+                print("Loading Subset of Database Data For {0}".format(db))
             
         dbdata = artistDB(db, known=known, debug=self.debug)
         return dbdata
