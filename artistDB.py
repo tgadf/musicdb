@@ -1,5 +1,4 @@
 from discogsBase import discogs
-from masterdb import getArtistAlbumsDB
 from searchUtils import findNearest
 from pandas import DataFrame, Series
 

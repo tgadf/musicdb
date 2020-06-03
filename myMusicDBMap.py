@@ -13,7 +13,9 @@ class myMusicDBMap():
             print("Creating myMusicDBMap()")
             
 
-        self.mapname  = join(prefix, 'musicdb', 'myMusicMap.p')
+        self.mapfilename = 'myMusicMap.p'
+        self.mapname     = join(prefix, 'musicdb', self.mapfilename)
+        
         self.dbkeys   = ["Discogs", "AllMusic", "MusicBrainz", "AceBootlegs", "RateYourMusic", "LastFM", "DatPiff", "RockCorner", "CDandLP", "MusicStack", "MetalStorm"]
         #self.dbkeys   = ["AllMusic", "MusicBrainz"]
         #self.dbkeys   = ["AllMusic"]
@@ -53,6 +55,16 @@ class myMusicDBMap():
             musicmap = self.musicmap
         self.show(musicmap)
         saveFile(idata=musicmap, ifile=self.mapname, debug=True)
+        
+    def saveYAML(self):
+        savename      = self.mapfilename.replace(".p", ".yaml")
+        musicmap = self.get()
+        saveFile(idata=musicmap, ifile=savename, debug=True)
+        
+    def readYAML(self):
+        savename      = self.mapfilename.replace(".p", ".yaml")
+        musicmap = getFile(savename)
+        self.save(musicmap)
             
 
     def show(self, musicmap=None):
@@ -75,12 +87,21 @@ class myMusicDBMap():
         #self.saveMyMusicMap()
         
 
+    def rmArtistDBKey(self, artistName, db):
+        if self.musicmap.get(artistName) is None:
+            print("There is no artist [{0}] in music DB.".format(artistName))
+            return
+        
+        if self.musicmap[artistName].get(db) is not None:
+            del self.musicmap[artistName][db]
+        return
+        print("Could not delete db [{0}] for artist [{1}] in music DB.".format(db, artistName))
+
+
+        
     def rmKey(self, db):
         for myArtistName in self.musicmap.keys():
-            try:
-                del self.musicmap[myArtistName][db]
-            except:
-                continue
+            self.rmArtistDBKey(artistName, db)
         return self.musicmap
         #self.saveMyMusicMap()
         
