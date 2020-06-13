@@ -34,6 +34,8 @@ class artistDB():
             else:
                 print("Getting All Artist DB Data")
         
+        self.artistIDToName = None
+        self.artistNameToID = None
         
         self.setArtistIDMap()
         self.setAlbumIDMap()
@@ -42,10 +44,33 @@ class artistDB():
             
     ########################################################################################################
     #
+    # Get Artist ID Mapping
+    #
+    ########################################################################################################
+    def getArtistIDFromName(self, artistName):
+        if self.artistNameToID is None:
+            self.setArtistIDMap()
+        if self.artistNameToID.get(artistName) is None:
+            print("Artist [{0}] is not a member of artistNameToID.".format(artistName))
+        artistID = self.artistNameToID[artistName]
+        return artistID
+
+    def getArtistNameFromID(self, artistID):
+        if self.artistIDToName is None:
+            self.setArtistIDMap()
+        if self.artistIDToName.get(artistID) is None:
+            print("Artist ID [{0}] is not a member of artistIDToName.".format(artistID))
+        artistName = self.artistIDToName[artistID]
+        return artistName
+    
+            
+            
+    ########################################################################################################
+    #
     # Set Artist ID Mapping
     #
     ########################################################################################################
-    def setArtistIDMap(self):        
+    def setArtistIDMap(self):
         if self.debug:
             print("  Getting Master Artist DB File ({0})".format(self.db))
 

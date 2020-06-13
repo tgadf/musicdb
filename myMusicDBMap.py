@@ -16,6 +16,7 @@ class myMusicDBMap():
         self.mapfilename = 'myMusicMap.p'
         self.mapname     = join(prefix, 'musicdb', self.mapfilename)
         
+        
         self.dbkeys   = ["Discogs", "AllMusic", "MusicBrainz", "AceBootlegs", "RateYourMusic", "LastFM", "DatPiff", "RockCorner", "CDandLP", "MusicStack", "MetalStorm"]
         #self.dbkeys   = ["AllMusic", "MusicBrainz"]
         #self.dbkeys   = ["AllMusic"]
@@ -31,6 +32,10 @@ class myMusicDBMap():
         if debug:
             print("   DB keys: {0}".format(self.dbkeys))
             
+    
+        self.setAlbumTypes()
+        
+        
         if debug:
             self.show()
             
@@ -137,6 +142,17 @@ class myMusicDBMap():
         if self.musicmap.get(artistName) is None:
             return False
         return True
+    
+    
+    def getArtistFromID(self, dbID):
+        for artistName,artistData in self.musicmap.items():
+            for db,dbdata in artistData.items():
+                if dbdata is not None:
+                    dbdataID = dbdata.get("ID")
+                    if dbdataID == dbID:
+                        return [db,artistName]
+        return [None,None]
+        
         
         
     def getMatchedDBStatus(self, artistName):
@@ -164,7 +180,7 @@ class myMusicDBMap():
         return self.musicmap[artistName][db]
     
     
-    def getArtistDataIDs(self, artistName):
+    def getArtistDataIDs(self, artistName, returnNone=True):
         if self.musicmap.get(artistName) is None:
             return {}        
         
@@ -174,6 +190,8 @@ class myMusicDBMap():
                 ID = dbdata["ID"]
             except:
                 ID = None
+                if returnNone is False:
+                    continue
             retval[db] = ID
         return retval
     
@@ -301,7 +319,7 @@ class myMusicDBMap():
         dbdata = artistDB(db, known=known, debug=self.debug)
         return dbdata
     
-        
+    
     def getFullDBData(self):
         for db in self.getDBs():
             self.dbdata[db] = self.getDBData(db, known=False)
@@ -318,81 +336,99 @@ class myMusicDBMap():
     # Database Section
     #
     ####################################################################################################
-    def getAlbumTypes(self, db, albumType, keys=False):
-        if keys is True:
-            return [1, 2, 3, 4]
+    def getDBAlbumTypeNames(self, db, albumType):
+        albumTypes = self.getDBAlbumTypes(db)
+        try:
+            albumTypeNames = albumTypes[albumType]
+        except:
+            raise ValueError("Could not find DB AlbumType [{0}] for DB [{1}] in dbAlbumTypes".format(albumType, db))
+            
+        return albumTypeNames
+        
+        
+    def getDBAlbumTypes(self, db):
+        try:
+            dbAlbumTypes = self.dbAlbumTypes[db]
+        except:
+            raise ValueError("Could not find DB [{0}] in dbAlbumTypes".format(db))
+            
+        return dbAlbumTypes
+    
+            
+    def setAlbumTypes(self):
+        self.dbAlbumTypes = {}
+                     
+        for db in self.getDBs():
+            if db == "Discogs":
+                allTypes  = ["Albums", "Singles & EPs", "Compilations", "Videos", "Miscellaneous"]
+                primary   = ["Albums"]
+                secondary = ["Compilations"]
+                tertiary  = ["Singles & EPs"]
+                fourth    = ["Videos", "Miscellaneous"] 
+            elif db == "AllMusic":
+                allTypes  = ["Albums", "Single/EP", "Comp", "Video", "Other"]
+                primary   = ["Albums"]
+                secondary = ["Comp"]
+                tertiary  = ["Single/EP"]
+                fourth    = ["Video", "Other"]
+            elif db == "MusicBrainz":
+                primary   = ["Album", "Album + Live", "Album + Soundtrack", "Album + Mixtape/Street", "Album + Remix", "Album + Audiobook", "Album + DJ-mix", "Album + Demo", "Album + Spokenword", "Album + Audio drama", "Album + Spokenword + Live", "Album + Soundtrack + Live", "Album + Remix + Mixtape/Street", "Album + Spokenword + Audiobook", "Album + Interview", "Album + Live + DJ-mix", "Album + Soundtrack + Remix", "Album + DJ-mix + Mixtape/Street", "Album + Interview + Live", "Album + Remix + DJ-mix", "Album + Live + Remix", "Album + Soundtrack + Audiobook", "Album + Interview + Demo", "Album + Soundtrack + Spokenword + Interview", "Album + Live + Demo", "Album + Soundtrack + Spokenword", "Album + Spokenword + Interview", "Album + Remix + Mixtape/Street + Demo", "Album + Demo + Audio drama", "Album + Soundtrack + Audiobook + Audio drama", "Album + Spokenword + Interview + Audiobook", "Album + Spokenword + Demo", "Album + Interview + Audiobook + Audio drama", "Album + Soundtrack + Audio drama", "Album + Soundtrack + Interview + Live", "Album + Audiobook + Audio drama", "Album + Audiobook + Live", "Album + Soundtrack + Demo"]
+                secondary = ["Album + Compilation", "Album + Compilation + DJ-mix", "Compilation", "Album + Compilation + Live", "Album + Compilation + Soundtrack", "Album + Compilation + Remix", "Single + Compilation", "Album + Compilation + Mixtape/Street", "Album + Compilation + Live + DJ-mix", "Album + Compilation + Spokenword", "Album + Compilation + Demo", "Broadcast + Compilation", "Compilation + DJ-mix", "Album + Compilation + DJ-mix + Mixtape/Street", "Album + Compilation + Remix + DJ-mix", "Album + Compilation + Spokenword + Live", "Album + Compilation + Soundtrack + Remix", "Album + Compilation + Interview", "Compilation + Soundtrack", "Compilation + Live", "Broadcast + Compilation + Live", "Album + Compilation + Interview + Live", "Album + Compilation + Audio drama", "Album + Compilation + Audiobook", "Album + Compilation + Live + Demo", "Album + Compilation + Live + Remix", "Compilation + Live + DJ-mix", "Album + Compilation + Spokenword + Audiobook", "Broadcast + Compilation + Remix + DJ-mix", "Album + Compilation + Mixtape/Street + Demo", "Album + Compilation + Soundtrack + Interview", "Album + Compilation + Soundtrack + Spokenword + Interview + Audiobook + Remix", "Album + Compilation + Remix + Mixtape/Street", "Compilation + Remix", "Album + Compilation + Soundtrack + Demo", "Broadcast + Compilation + Audio drama"]
+                tertiary  = ["Single", "EP", "EP + Live", "EP + Remix", "Single + Soundtrack", "Single + Live", "EP + Demo", "EP + Compilation", "EP + Soundtrack", "EP + Mixtape/Street", "Single + Demo", "Single + DJ-mix", "Single + Mixtape/Street", "EP + DJ-mix", "Single + Soundtrack + Remix", "Single + Audiobook", "EP + Compilation + Remix", "Single + Live + Remix", "EP + Live + Demo", "EP + Audio drama", "EP + Remix + Mixtape/Street", "Single + Audio drama", "Single + Soundtrack + Live", "EP + Soundtrack + Remix", "EP + Compilation + Live", "EP + Compilation + Mixtape/Street", "EP + Audiobook", "Single + Compilation + Remix", "Single + DJ-mix + Demo", "EP + Compilation + Remix + DJ-mix", "EP + Live + DJ-mix", "EP + Spokenword + Live", "Single + Remix + Mixtape/Street", "Single + Remix + Demo", "EP + Compilation + Demo", "Single + Mixtape/Street + Demo", "EP + Live + Remix", "Single + Spokenword", "Single + Interview", "EP + Compilation + Soundtrack", "EP + Interview"]
+                fourth    = ["Unspecified type", "Other", "Single + Remix", "Other + Audiobook", "Other + Audio drama", "Other + Spokenword", "Live", "Remix", "Other + Compilation", "Broadcast", "Audiobook", "Other + Live", "Other + Demo", "Other + Interview", "Broadcast + Live", "Major series / box sets", "Sub Optimal Credits", "Soundtrack", "Broadcast + Audio drama", "Other + Mixtape/Street", "Currently known involved people:", "Demo", "The What The Fuck Serie:", "Mixtape/Street", "Other + DJ-mix", "A stab at the horrible Blue Note mess:", "Other + Soundtrack", "DJ-mix", "Broadcast + DJ-mix", "Spokenword", "Broadcast + Spokenword", "Broadcast + Audiobook", "Nonline discography:", "Other + Remix", "Other + Compilation + Live", "Other + Compilation + Audiobook", "Online discography:", "Former Official Homepage", "Current Members", "Don\'t add these albums here:", "Broadcast + Live + DJ-mix", "Other + Spokenword + Live", "Other + Spokenword + Audiobook", "Other + Spokenword + Audiobook + Audio drama", "Past Members", "Broadcast + Spokenword + Audio drama", "Audio drama", "Broadcast + Interview", "Other + Compilation + Spokenword", "Live + Demo", "Broadcast + Live + Audio drama", "Broadcast + Spokenword + Audiobook", "Other + Compilation + Demo", "Other + Compilation + Interview", "Broadcast + Demo", "Live + DJ-mix", "Other + Compilation + Live + DJ-mix", "DJ-mix + Mixtape/Street", "Other + Soundtrack + Mixtape/Street + Demo", "Zyklen/Reihen:", "Other + Compilation + DJ-mix", "Other + Audiobook + Audio drama", "Other + Compilation + Mixtape/Street", "Other + Remix + Mixtape/Street", "Other + Compilation + Interview + Live", "Broadcast + Soundtrack", "Other + Live + Demo", "Interview", "Jam Today (2)  1979 ~ 1980", "Other + Spokenword + DJ-mix + Mixtape/Street", "Other + Compilation + Remix", "Broadcast + Interview + Live"]        
+                allTypes  = primary + secondary + tertiary + fourth
+            elif db == "AceBootlegs":
+                allTypes  = ["Bootleg"]
+                primary   = ["Bootleg"]
+                secondary = []
+                tertiary  = []
+                fourth    = []
+            elif db == "RateYourMusic":     
+                primary   = ["Album", "Live Album"]
+                secondary = ['V/A Compilation', 'Compilation']
+                tertiary  = ['Single', 'EP']
+                fourth    = ['Bootleg / Unauthorized', 'Appears On', "Video"]        
+                allTypes  = primary + secondary + tertiary + fourth
+            elif db == "LastFM":
+                allTypes  = ["Albums"]
+                primary   = ["Albums"]
+                secondary = []
+                tertiary  = []
+                fourth    = []
+            elif db == "DatPiff":
+                allTypes  = ["MixTape"]
+                primary   = ["MixTape"]
+                secondary = []
+                tertiary  = []
+                fourth    = []
+            elif db == "RockCorner":
+                primary   = ["Albums"]
+                secondary = []
+                tertiary  = ["Songs"]
+                fourth    = []     
+                allTypes  = primary + secondary + tertiary + fourth
+            elif db == "CDandLP":
+                primary   = ["Albums"]
+                secondary = []
+                tertiary  = []
+                fourth    = []     
+                allTypes  = primary + secondary + tertiary + fourth
+            elif db == "MusicStack":
+                primary   = ["Albums"]
+                secondary = []
+                tertiary  = []
+                fourth    = []     
+                allTypes  = primary + secondary + tertiary + fourth
+            elif db == "MetalStorm":
+                primary   = ["Albums"]
+                secondary = []
+                tertiary  = []
+                fourth    = []
+                allTypes  = primary + secondary + tertiary + fourth
+            else:
+                raise ValueError("Key is not known!")
 
-        if db == "Discogs":
-            allTypes  = ["Albums", "Singles & EPs", "Compilations", "Videos", "Miscellaneous"]
-            primary   = ["Albums"]
-            secondary = ["Compilations"]
-            tertiary  = ["Singles & EPs"]
-            fourth    = ["Videos", "Miscellaneous"] 
-        elif db == "AllMusic":
-            allTypes  = ["Albums", "Single/EP", "Comp", "Video", "Other"]
-            primary   = ["Albums"]
-            secondary = ["Comp"]
-            tertiary  = ["Single/EP"]
-            fourth    = ["Video", "Other"]
-        elif db == "MusicBrainz":
-            primary   = ["Album", "Album + Live", "Album + Soundtrack", "Album + Mixtape/Street", "Album + Remix", "Album + Audiobook", "Album + DJ-mix", "Album + Demo", "Album + Spokenword", "Album + Audio drama", "Album + Spokenword + Live", "Album + Soundtrack + Live", "Album + Remix + Mixtape/Street", "Album + Spokenword + Audiobook", "Album + Interview", "Album + Live + DJ-mix", "Album + Soundtrack + Remix", "Album + DJ-mix + Mixtape/Street", "Album + Interview + Live", "Album + Remix + DJ-mix", "Album + Live + Remix", "Album + Soundtrack + Audiobook", "Album + Interview + Demo", "Album + Soundtrack + Spokenword + Interview", "Album + Live + Demo", "Album + Soundtrack + Spokenword", "Album + Spokenword + Interview", "Album + Remix + Mixtape/Street + Demo", "Album + Demo + Audio drama", "Album + Soundtrack + Audiobook + Audio drama", "Album + Spokenword + Interview + Audiobook", "Album + Spokenword + Demo", "Album + Interview + Audiobook + Audio drama", "Album + Soundtrack + Audio drama", "Album + Soundtrack + Interview + Live", "Album + Audiobook + Audio drama", "Album + Audiobook + Live", "Album + Soundtrack + Demo"]
-            secondary = ["Album + Compilation", "Album + Compilation + DJ-mix", "Compilation", "Album + Compilation + Live", "Album + Compilation + Soundtrack", "Album + Compilation + Remix", "Single + Compilation", "Album + Compilation + Mixtape/Street", "Album + Compilation + Live + DJ-mix", "Album + Compilation + Spokenword", "Album + Compilation + Demo", "Broadcast + Compilation", "Compilation + DJ-mix", "Album + Compilation + DJ-mix + Mixtape/Street", "Album + Compilation + Remix + DJ-mix", "Album + Compilation + Spokenword + Live", "Album + Compilation + Soundtrack + Remix", "Album + Compilation + Interview", "Compilation + Soundtrack", "Compilation + Live", "Broadcast + Compilation + Live", "Album + Compilation + Interview + Live", "Album + Compilation + Audio drama", "Album + Compilation + Audiobook", "Album + Compilation + Live + Demo", "Album + Compilation + Live + Remix", "Compilation + Live + DJ-mix", "Album + Compilation + Spokenword + Audiobook", "Broadcast + Compilation + Remix + DJ-mix", "Album + Compilation + Mixtape/Street + Demo", "Album + Compilation + Soundtrack + Interview", "Album + Compilation + Soundtrack + Spokenword + Interview + Audiobook + Remix", "Album + Compilation + Remix + Mixtape/Street", "Compilation + Remix", "Album + Compilation + Soundtrack + Demo", "Broadcast + Compilation + Audio drama"]
-            tertiary  = ["Single", "EP", "EP + Live", "EP + Remix", "Single + Soundtrack", "Single + Live", "EP + Demo", "EP + Compilation", "EP + Soundtrack", "EP + Mixtape/Street", "Single + Demo", "Single + DJ-mix", "Single + Mixtape/Street", "EP + DJ-mix", "Single + Soundtrack + Remix", "Single + Audiobook", "EP + Compilation + Remix", "Single + Live + Remix", "EP + Live + Demo", "EP + Audio drama", "EP + Remix + Mixtape/Street", "Single + Audio drama", "Single + Soundtrack + Live", "EP + Soundtrack + Remix", "EP + Compilation + Live", "EP + Compilation + Mixtape/Street", "EP + Audiobook", "Single + Compilation + Remix", "Single + DJ-mix + Demo", "EP + Compilation + Remix + DJ-mix", "EP + Live + DJ-mix", "EP + Spokenword + Live", "Single + Remix + Mixtape/Street", "Single + Remix + Demo", "EP + Compilation + Demo", "Single + Mixtape/Street + Demo", "EP + Live + Remix", "Single + Spokenword", "Single + Interview", "EP + Compilation + Soundtrack", "EP + Interview"]
-            fourth    = ["Unspecified type", "Other", "Single + Remix", "Other + Audiobook", "Other + Audio drama", "Other + Spokenword", "Live", "Remix", "Other + Compilation", "Broadcast", "Audiobook", "Other + Live", "Other + Demo", "Other + Interview", "Broadcast + Live", "Major series / box sets", "Sub Optimal Credits", "Soundtrack", "Broadcast + Audio drama", "Other + Mixtape/Street", "Currently known involved people:", "Demo", "The What The Fuck Serie:", "Mixtape/Street", "Other + DJ-mix", "A stab at the horrible Blue Note mess:", "Other + Soundtrack", "DJ-mix", "Broadcast + DJ-mix", "Spokenword", "Broadcast + Spokenword", "Broadcast + Audiobook", "Nonline discography:", "Other + Remix", "Other + Compilation + Live", "Other + Compilation + Audiobook", "Online discography:", "Former Official Homepage", "Current Members", "Don\'t add these albums here:", "Broadcast + Live + DJ-mix", "Other + Spokenword + Live", "Other + Spokenword + Audiobook", "Other + Spokenword + Audiobook + Audio drama", "Past Members", "Broadcast + Spokenword + Audio drama", "Audio drama", "Broadcast + Interview", "Other + Compilation + Spokenword", "Live + Demo", "Broadcast + Live + Audio drama", "Broadcast + Spokenword + Audiobook", "Other + Compilation + Demo", "Other + Compilation + Interview", "Broadcast + Demo", "Live + DJ-mix", "Other + Compilation + Live + DJ-mix", "DJ-mix + Mixtape/Street", "Other + Soundtrack + Mixtape/Street + Demo", "Zyklen/Reihen:", "Other + Compilation + DJ-mix", "Other + Audiobook + Audio drama", "Other + Compilation + Mixtape/Street", "Other + Remix + Mixtape/Street", "Other + Compilation + Interview + Live", "Broadcast + Soundtrack", "Other + Live + Demo", "Interview", "Jam Today (2)  1979 ~ 1980", "Other + Spokenword + DJ-mix + Mixtape/Street", "Other + Compilation + Remix", "Broadcast + Interview + Live"]        
-            allTypes  = primary + secondary + tertiary + fourth
-        elif db == "AceBootlegs":
-            allTypes  = ["Bootleg"]
-            primary   = ["Bootleg"]
-            secondary = []
-            tertiary  = []
-            fourth    = []
-        elif db == "RateYourMusic":     
-            primary   = ["Album", "Live Album"]
-            secondary = ['V/A Compilation', 'Compilation']
-            tertiary  = ['Single', 'EP']
-            fourth    = ['Bootleg / Unauthorized', 'Appears On', "Video"]        
-            allTypes  = primary + secondary + tertiary + fourth
-        elif db == "LastFM":
-            allTypes  = ["Albums"]
-            primary   = ["Albums"]
-            secondary = []
-            tertiary  = []
-            fourth    = []
-        elif db == "DatPiff":
-            allTypes  = ["MixTape"]
-            primary   = ["MixTape"]
-            secondary = []
-            tertiary  = []
-            fourth    = []
-        elif db == "RockCorner":
-            primary   = ["Albums"]
-            secondary = []
-            tertiary  = ["Songs"]
-            fourth    = []     
-            allTypes  = primary + secondary + tertiary + fourth
-        elif db == "CDandLP":
-            primary   = ["Albums"]
-            secondary = []
-            tertiary  = []
-            fourth    = []     
-            allTypes  = primary + secondary + tertiary + fourth
-        elif db == "MusicStack":
-            primary   = ["Albums"]
-            secondary = []
-            tertiary  = []
-            fourth    = []     
-            allTypes  = primary + secondary + tertiary + fourth
-        elif db == "MetalStorm":
-            primary   = ["Albums"]
-            secondary = []
-            tertiary  = []
-            fourth    = []
-            allTypes  = primary + secondary + tertiary + fourth
-        else:
-            raise ValueError("Key is not known!")
 
+            retval = {"All": allTypes, 1: primary, 2: secondary, 3: tertiary, 4: fourth}
 
-        retval = {"All": allTypes, 1: primary, 2: secondary, 3: tertiary, 4: fourth}
-        return retval[albumType]
-
-
+            self.dbAlbumTypes[db] = retval
