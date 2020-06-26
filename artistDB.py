@@ -1,4 +1,4 @@
-from discogsBase import discogs
+from dbBase import dbBase
 from searchUtils import findNearest
 from pandas import DataFrame, Series
 
@@ -16,9 +16,9 @@ class artistDB():
             print("Getting DB Data For {0}".format(db))
         
         try:
-            self.disc           = discogs(db.lower())
+            self.disc           = dbBase(db.lower())
         except:
-            raise ValueError("Cannot create a discogs() object with [{0}]".format(db.lower()))
+            raise ValueError("Cannot create a dbBase() object with [{0}]".format(db.lower()))
             
         self.discdf         = None
         self.artists        = None
