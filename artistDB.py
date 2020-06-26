@@ -113,7 +113,7 @@ class artistDB():
         if self.known is True:
             self.albumsDB = self.disc.getMasterKnownArtistAlbumsDiscogsDB()
         else:
-            self.albumsDB = self.disc.getMasterArtistAlbumsDiscogsDB()
+            self.albumsDB = self.disc.getMasterSlimArtistAlbumsDiscogsDB()
             
         if self.debug:
             if self.known is True:
