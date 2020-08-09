@@ -5,6 +5,7 @@ from os import getcwd
 from os.path import join
 from sys import prefix
 from artistDB import artistDB
+import json
 
 class myMusicDBMap():
     def __init__(self, debug=False):
@@ -34,7 +35,7 @@ class myMusicDBMap():
             
     
         self.setAlbumTypes()
-        
+        self.setDBMatches()
         
         if debug:
             self.show()
@@ -145,8 +146,21 @@ class myMusicDBMap():
             if dbData.get('ID') is not None:
                 dbMatches[artistName] = dbData['ID']
         return dbMatches
-        
-        
+    
+    
+    def setDBMatches(self):
+        self.dbArtistData = {db: {} for db in self.getDBs()}
+        for artist,artistData in self.get().items():
+            for db,dbmatch in artistData.items():
+                if dbmatch is not None:
+                    dbID = dbmatch.get('ID')
+                    try:
+                        str(int(dbID))
+                    except:
+                        pass
+                    self.dbArtistData[db][dbID] = artist
+                    
+    
         
     ####################################################################################################
     #
@@ -157,6 +171,7 @@ class myMusicDBMap():
         if self.musicmap.get(artistName) is None:
             return False
         return True
+        
     
     
     def getArtistFromID(self, dbID):
@@ -236,6 +251,16 @@ class myMusicDBMap():
             print("  Getting DB Artist IDs for ArtistName: {0}".format(artistName))
         artistIDs = {db: self.dbdata[db].getArtistIDs(artistName, num, cutoff, debug=debug) for db in self.getDBs()}
         return artistIDs
+    
+    
+    def getArtistFromDBID(self, db, dbID):
+        try:
+            adb = self.dbdata[db]
+        except:
+            raise ValueError("DB {0} does not exist.".format(db))
+            
+        artist = adb.getArtistNameFromID(dbID)
+        return artist
         
         
     def getArtistDBIDs(self, artistName, db, num=10, cutoff=0.7, debug=False):
@@ -265,7 +290,6 @@ class myMusicDBMap():
         if not all([self.dbdata.get(db) for db in self.getDBs()]):
             self.getFullDBData()
         
-        import json
         print("  Getting Artist Albums for ArtistName: {0}".format(artistName))
         artistAlbums = {}
         artistIDs    = self.getArtistIDs(artistName, num=num, cutoff=cutoff, debug=debug)
@@ -301,6 +325,12 @@ class myMusicDBMap():
     # Interactive Section
     #
     ####################################################################################################
+    def getNearestArtistNames(self, artistName, num=1, cutoff=0.9, debug=False):
+        if not all([self.dbdata.get(db) for db in self.getDBs()]):
+            self.getFullDBData()                    
+        artistMatches = {db: self.dbdata[db].getNearestArtist(artistName, num, cutoff, debug=debug) for db in self.getDBs()}
+        return artistMatches
+        
     def getNearestArtists(self, artistName, num=2, cutoff=0.7):
         artists = findNearest(artistName, self.getArtists(), num=num, cutoff=cutoff)
         print("Nearest Matches for: {0}".format(artistName))

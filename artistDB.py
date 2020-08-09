@@ -138,6 +138,13 @@ class artistDB():
     # Get Artist Data
     #
     ########################################################################################################
+    def getNearestArtist(self, artistName, num=1, cutoff=0.9, debug=False):
+        nearArtists = findNearest(artistName, self.getArtists(), num=num, cutoff=cutoff)
+        if len(nearArtists) > 0:
+            return nearArtists[0]
+        return None
+
+        
     def getArtistIDs(self, artistName, num=10, cutoff=0.7, debug=False):
         artistIDs = {}
         if self.artistNameToID.get(artistName) is not None:
