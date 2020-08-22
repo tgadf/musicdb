@@ -327,7 +327,7 @@ class myMusicDBMap():
     ####################################################################################################
     def getNearestArtistNames(self, artistName, num=1, cutoff=0.9, debug=False):
         if not all([self.dbdata.get(db) for db in self.getDBs()]):
-            self.getFullDBData()                    
+            self.getFullDBData()
         artistMatches = {db: self.dbdata[db].getNearestArtist(artistName, num, cutoff, debug=debug) for db in self.getDBs()}
         return artistMatches
         
