@@ -8,7 +8,7 @@ from artistDB import artistDB
 import json
 
 class myMusicDBMap():
-    def __init__(self, debug=False):
+    def __init__(self, debug=False, overwrite=False):
         self.debug=debug
         if debug:
             print("Creating myMusicDBMap()")
@@ -34,15 +34,36 @@ class myMusicDBMap():
             print("   DB keys: {0}".format(self.dbkeys))
             
     
-        self.setAlbumTypes()
-        self.setDBMatches()
-        
-        if debug:
-            self.show()
+        if overwrite is False:
+            self.setAlbumTypes()
+            self.setDBMatches()
+
+            if debug:
+                self.show()
+        else:
+            print("Go ahead and edit the music map")
             
+            
+    def checkDB(self, db, artist=None):
+        if db not in self.dbkeys:
+            if artist is None:
+                artist = "?"
+            raise ValueError("Database [{0}] not in valid DB list (Artist is {1})".format(db, artist))            
             
     def setDBs(self, dbs):
         self.dbkeys = dbs
+                        
+    def checkID(self, dbID, db=None, artist=None):
+        if dbID is None:
+            return
+        try:
+            int(dbID)
+        except:
+            if db is None:
+                db = "?"
+            if artist is None:
+                artist = "?"
+            raise ValueError("Database ID [{0}] is not an integer (DB is {1} and Artist is {2})".format(dbID, db, artist))            
             
             
     def get(self):
@@ -106,6 +127,7 @@ class myMusicDBMap():
 
         
     def rmKey(self, db):
+        self.checkDB(db)
         for myArtistName in self.musicmap.keys():
             self.rmArtistDBKey(artistName, db)
         return self.musicmap
@@ -120,6 +142,9 @@ class myMusicDBMap():
         
         
     def add(self, artistName, dbName, artistID):
+        self.checkDB(dbName)
+        self.checkID(artistID)
+        
         if self.musicmap.get(artistName) is None:
             self.addArtist(artistName)
         dbData = self.musicmap[artistName].get(dbName)
@@ -152,12 +177,10 @@ class myMusicDBMap():
         self.dbArtistData = {db: {} for db in self.getDBs()}
         for artist,artistData in self.get().items():
             for db,dbmatch in artistData.items():
+                self.checkDB(db,artist)
                 if dbmatch is not None:
                     dbID = dbmatch.get('ID')
-                    try:
-                        str(int(dbID))
-                    except:
-                        pass
+                    self.checkID(dbID)
                     self.dbArtistData[db][dbID] = artist
                     
     
@@ -172,8 +195,6 @@ class myMusicDBMap():
             return False
         return True
         
-    
-    
     def getArtistFromID(self, dbID):
         for artistName,artistData in self.musicmap.items():
             for db,dbdata in artistData.items():
@@ -182,7 +203,6 @@ class myMusicDBMap():
                     if dbdataID == dbID:
                         return [db,artistName]
         return [None,None]
-        
         
         
     def getMatchedDBStatus(self, artistName):
