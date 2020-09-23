@@ -145,6 +145,11 @@ class myMusicDBMap():
         self.checkDB(dbName)
         self.checkID(artistID)
         
+        try:
+            int(artistID)
+        except:
+            raise ValueError("Artist [{0}}] and Database [{1}] with ID [{2}] isn't a number".format(dbName, artistName, artistID))
+        
         if self.musicmap.get(artistName) is None:
             self.addArtist(artistName)
         dbData = self.musicmap[artistName].get(dbName)

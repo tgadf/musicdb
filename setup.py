@@ -18,9 +18,17 @@ class InstallWrapper(install):
     install.run(self)
 
   def _copy_web_server_files(self):
+    ext = "p"
     # Check to see we are running as a non-prv
-    targetFile = os.path.join(sys.prefix, 'musicdb', 'myMusicMap.p')
-    localFile  = "myMusicMap.p"    
+    targetFile = os.path.join(sys.prefix, 'musicdb', 'myMusicMap.{0}'.format(ext))
+    localFile  = "myMusicMap.{0}".format(ext)
+    print("===> Copying [{0}] to [{1}] to avoid overwritting the subsequent reverse copy".format(targetFile, localFile))
+    copyfile(src=targetFile, dst=localFile)
+    
+    ext = "p"
+    # Check to see we are running as a non-prv
+    targetFile = os.path.join(sys.prefix, 'musicdb', 'musicData.{0}'.format(ext))
+    localFile  = "musicData.{0}".format(ext)
     print("===> Copying [{0}] to [{1}] to avoid overwritting the subsequent reverse copy".format(targetFile, localFile))
     copyfile(src=targetFile, dst=localFile)
     
@@ -28,10 +36,10 @@ class InstallWrapper(install):
     
 setup(
   name = 'musicdb',
-  py_modules = ['myMusicDBMap', 'artistDB', 'mergeDB'],
+  py_modules = ['myMusicDBMap', 'artistDB', 'mergeDB', 'musicData', 'musicDBData', 'musicArtistData'],
   cmdclass={'install': InstallWrapper},
   version = '0.0.1',
-  data_files = [(os.path.join(sys.prefix, 'musicdb'), ['myMusicMap.p'])],
+  data_files = [(os.path.join(sys.prefix, 'musicdb'), ['myMusicMap.p', 'musicData.yaml'])],
   description = 'A Python Wrapper for Music DB Data',
   long_description = open('README.md').read(),
   author = 'Thomas Gadfort',
