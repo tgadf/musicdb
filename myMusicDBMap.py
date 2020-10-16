@@ -114,6 +114,15 @@ class myMusicDBMap():
         #self.saveMyMusicMap()
         
 
+    def rmArtist(self, artistName):
+        if self.musicmap.get(artistName) is None:
+            print("There is no artist [{0}] in music DB.".format(artistName))
+            return
+        del self.musicmap[artistName]
+        return
+        print("Could not delete db [{0}] for artist [{1}] in music DB.".format(db, artistName))
+        
+
     def rmArtistDBKey(self, artistName, db):
         if self.musicmap.get(artistName) is None:
             print("There is no artist [{0}] in music DB.".format(artistName))
