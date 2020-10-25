@@ -1,3 +1,4 @@
+from pandas import DataFrame
 from musicDBData import musicDBData
 
 class musicArtistData:
@@ -13,13 +14,29 @@ class musicArtistData:
 
         self.debug = False
         
+        
+    def dfSummary(self):
+        artistDBData = {}
+        artistData   = self.dbdata
+        artistDBData = {dbName: artistData[dbName].getDict() for dbName in artistData.keys()}
+        
+        summaryDF = DataFrame(artistDBData)
+        return summaryDF
+        
+        
     def summary(self):
         print("-"*25,self.discname,"-"*25)
         print("-"*10,"DB")
-        for source, dbdata in self.dbdata.items():
-            dbdata.summary()
+        if len(self.dbdata) == 0:
+            print("\t\tNo entries")
+        else:
+            for source, dbdata in self.dbdata.items():
+                dbdata.summary()
         print("-"*10,"Renames")
-        print("\t\t"," ; ".join(self.renames))
+        if len(self.renames) == 0:
+            print("\t\tNo entries")
+        else:
+            print("\t\t"," ; ".join(self.renames))
         
     def addDBData(self, source, dbdata):
         if self.debug:

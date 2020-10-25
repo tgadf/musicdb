@@ -1,29 +1,35 @@
 from sys import prefix
 from os import getcwd
 from os.path import join
+from pandas import concat
 from ioUtils import getFile, saveFile
 from myMusicDBMap import myMusicDBMap
 from musicDBData import musicDBData
 from musicArtistData import musicArtistData
         
 class musicData:
-    def __init__(self):
+    def __init__(self, init=False):
         ext = "p"
-        self.mapfilename = "musicData.{0}".format(ext)
-        self.mapname     = join(prefix, 'musicdb', self.mapfilename)
-        try:
-            self.artists     = getFile(ifile=self.mapname, debug=True)
+        self.mapfilename  = "musicData.{0}".format(ext)
+        self.mapname      = join(prefix, 'musicdb', self.mapfilename)
+        self.masterdfname = join(prefix, 'musicdb', "masterMusicData.{0}".format(ext))
+        if init is True:
             self.artists = {}
-        except:
-            print("Could not find previous data {0}".format(self.mapname))
-            self.artists = {}
+        else:
+            try:
+                self.artists     = getFile(ifile=self.mapname, debug=True)
+            except:
+                print("Could not find previous data {0}".format(self.mapname))
+                self.artists = {}
 
         
     ################################################################################################
     ## DB Data
     ################################################################################################
-    def setDBData(self, source, dbdata):
+    def setDBData(self, source, dbdata, debug=False):
         if isinstance(dbdata, dict):
+            if debug:
+                print("====> Will add {0} entries for source {1}".format(len(dbdata), source))
             for artistName, artistData in dbdata.items():
                 if self.artists.get(artistName) is not None:
                     mad = self.artists[artistName]
@@ -31,6 +37,8 @@ class musicData:
                     mad = musicArtistData(discname=artistName)
                 mad.addDBData(source=source, dbdata=artistData)
                 self.artists[artistName] = mad
+            if debug:
+                print("\tAfter adding {0} entries for source {1} there are now {2} artist entries".format(len(dbdata), source, len(self.artists)))
         else:
             raise ValueError("Must pass music dict")
             
@@ -38,22 +46,25 @@ class musicData:
     ################################################################################################
     ## Music DB Data
     ################################################################################################
-    def setMusicDBData(self, mdb):
-        self.setDBData(source="Music", dbdata=mdb.get())
+    def setMusicDBData(self, mdb, debug=False):
+        self.setDBData(source="Music", dbdata=mdb.get(), debug=debug)
             
         
     ################################################################################################
     ## Chart DB Data
     ################################################################################################
-    def setChartDBData(self, chart, chartdb):
-        self.setDBData(source=chart, dbdata=chartdb)
+    def setChartDBData(self, chart, chartdb, debug=False):
+        self.setDBData(source=chart, dbdata=chartdb, debug=debug)
         
         
     ################################################################################################
     ## Rename Data
     ################################################################################################
-    def setRenameData(self, renameData):
+    def setRenameData(self, renameData, debug=False):
+        source = "Renames"
         if isinstance(renameData, dict):
+            if debug:
+                print("====> Will add {0} entries for source {1}".format(len(renameData), source))
             for renameName, artistName in renameData.items():
                 if self.artists.get(artistName) is not None:
                     mad = self.artists[artistName]
@@ -61,8 +72,11 @@ class musicData:
                     mad = musicArtistData(discname=artistName)
                 mad.addRenames(renameName)
                 self.artists[artistName] = mad
+            if debug:
+                print("\tAfter adding {0} entries for source {1} there are now {2} artist entries".format(len(renameData), source, len(self.artists)))
         else:
             raise ValueError("Must pass music dict")
+        
         
     
     ################################################################################################
@@ -85,6 +99,28 @@ class musicData:
         if artists is None:
             artists = self.artists
         print("There are {0} known artists".format(len(artists)))
+        
+            
+            
+    ################################################################################################
+    ## Master DataFrame
+    ################################################################################################
+    def getMasterDBStatus(self, alldf):
+        alldf["Status"] = alldf.apply(func=lambda x: x.nunique(), axis=1)
+        return alldf
+        
+    def createMasterDF(self, artists=None):
+        if artists is None:
+            artists = self.artists
+        if artists is None:
+            artists = getFile(ifile=self.mapname, debug=True)
+        
+        tmp = {artistName: artists[artistName].dfSummary() for artistName in artists.keys()}
+        alldf = concat(tmp.values(), keys=tmp.keys())
+        alldf = self.getMasterDBStatus(alldf)
+        alldf.index.names = ["Artist", "DB"]
+        
+        saveFile(idata=alldf, ifile=self.masterdfname, debug=True)
             
         
     

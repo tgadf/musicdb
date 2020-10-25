@@ -6,32 +6,49 @@ class musicDBData:
         self.music     = []
         
         self.debug = False
+
         
-    def summary(self):
-        print("-"*10,self.source)
+    def getDict(self):
+        retval = {}
         for db in sorted(self.dbdata.keys()):
             dbID = self.dbdata[db]
-            if isinstance(dbID, dict):
+            if dbID is None:
+                retval[db] = None
+            elif isinstance(dbID, dict):
                 tmp = dbID.get("ID")
                 if tmp is not None:
                     try:
-                        dbID = int(tmp)
+                        int(tmp)
                     except:
                         dbID = "NotIntFromDict"
                 else:
                     dbID = "NoneFromNone"
+                retval[db] = tmp
             elif isinstance(dbID, str):
                 tmp = dbID
                 try:
-                    dbID = int(tmp)
+                    int(tmp)
                 except:
                     dbID = "NotIntFromStr"
+                retval[db] = tmp
+            else:
+                retval[db] = "UnknownType"
+        return retval
+                
+        
+    def summary(self):
+        print("-"*10,self.source)
+        summaryDB = self.dbdata.copy()
+        for db in sorted(summaryDB.keys()):
+            dbID = summaryDB[db]
             print("\t\t","\t{0: <25}{1}".format(db,dbID))
         print("\t\t","\t{0: <25}{1}".format("Music",len(self.music)))
+        
         
     def addMusic(self, music):
         for item in music:
             self.music.append(item)
+            
         
     def setDBIDData(self, db, dbID):
         if self.dbdata.get(db) is None:
@@ -41,6 +58,7 @@ class musicDBData:
         else:
             if dbID != self.dbdata[db]:
                 raise ValueError("Chart IDs for DB {0} do not match!".format(dbID, self.dbdata[db]))
+                
                 
     def setDBData(self, dbdata):
         if self.debug:
