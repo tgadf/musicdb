@@ -277,6 +277,22 @@ class myMusicDBMap():
     # Get Artist Data
     #
     ########################################################################################################
+    def getArtistIDsFromDBs(self, artistName, dbs, num=10, cutoff=0.7, debug=False):
+        if not all([self.dbdata.get(db) for db in self.getDBs()]):
+            self.getFullDBData()
+                    
+        if debug:
+            print("  Getting DB Artist IDs for ArtistName: {0}".format(artistName))
+        artistIDs = {}
+        for db in self.getDBs():
+            if db in dbs:
+                artistIDs[db] = self.getArtistDBIDs(artistName, db, num, cutoff, debug)
+            else:
+                artistIDs[db] = {}
+        return artistIDs
+    
+    
+    
     def getArtistIDs(self, artistName, num=10, cutoff=0.7, debug=False):
         if not all([self.dbdata.get(db) for db in self.getDBs()]):
             self.getFullDBData()
