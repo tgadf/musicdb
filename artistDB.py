@@ -171,8 +171,11 @@ class artistDB():
         if self.albumsDB is None:
             raise ValueError("Artist Albums not set!")
             
+        if artistID is None:
+            return {}
+            
         if self.albumsDB.get(artistID) is None:
-            print("Artist ID [{0}] is not found in Albums DB [{1}]".format(artistID, self.db))
+            print("# Artist ID [{0}] is not found in Albums DB [{1}]".format(artistID, self.db))
             return {}
         
         if flatten is True:

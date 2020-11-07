@@ -7,7 +7,48 @@ from sys import prefix
 from artistDB import artistDB
 import json
 
-class myMusicDBMap():
+
+class myMusicDBs:
+    def __init__(self):
+        self.dbs = ["Discogs", "AllMusic", "MusicBrainz", "AceBootlegs", "RateYourMusic", "LastFM", "DatPiff", "RockCorner", "CDandLP", "MusicStack", "MetalStorm"]
+    
+    def isValid(self, db):
+        return db in self.dbs
+    
+    def get(self):
+        return self.dbs
+        
+
+class myMusicDBIDData:
+    def __init__(self, dbID=None):
+        self.dbID = None
+        self.name = None
+        
+    def add(self, dbID, name=None):
+        if dbID is None:
+            self.dbID = dbID
+            self.name = name
+            return
+        try:
+            self.dbID = str(int(dbID))
+            self.name = name
+        except:
+            raise ValueError("Cannot set dbID to {0}".format(dbID))
+            
+
+class myMusicArtistDBData(myMusicDBs):
+    def __init__(self):
+        myMusicDBs.__init__(self)
+        
+    def init(self):
+        self.dbdata = {db: myMusicDBIDData() for db in myMusicDBs.get()}
+        
+    def add(self, db, dbID=None):
+        assert isValid(db)
+        self.dbdata[db].add(dbID, name=None)
+
+        
+class myMusicDBMap:
     def __init__(self, debug=False, overwrite=False):
         self.debug=debug
         if debug:
@@ -22,6 +63,8 @@ class myMusicDBMap():
         #self.dbkeys   = ["AllMusic", "MusicBrainz"]
         #self.dbkeys   = ["AllMusic"]
         self.dbdata   = {}
+        
+        self.artistIDElement = {"ID": None, "Name": None}
         
         if debug:
             print("   Loading my music db map: {0}".format(self.mapname))
@@ -42,6 +85,69 @@ class myMusicDBMap():
                 self.show()
         else:
             print("Go ahead and edit the music map")
+            
+        self.assertDBQuality()
+        self.fillReverseDB()
+        
+        
+    def assertDBQuality(self, fix=False):
+        for myArtistName in self.musicmap.keys():
+            artistData = self.getArtistData(myArtistName)
+            for db in artistData.keys():
+                dbdata = artistData[db]
+                if dbdata is None:
+                    if fix is True:
+                        self.initArtistDB(myArtistName, db)
+                    else:
+                        raise ValueError("Error with [{0}] and DB [{1}] set to None!".format(myArtistName, db))
+                else:
+                    if not isinstance(dbdata, dict):
+                        raise ValueError("Error with [{0}] and DB [{1}] set to non dictionary!".format(myArtistName, db))
+                    try:
+                        dbID = dbdata["ID"]
+                    except:
+                        raise ValueError("Error with [{0}] and DB [{1}] set to [{2}]!".format(myArtistName, db, dbID))
+                    if dbID is None:
+                        continue
+                    try:
+                        str(int(dbdata["ID"]))
+                    except:
+                        raise ValueError("Error with [{0}] and DB [{1}] set to [{2}]!".format(myArtistName, db, dbdata))
+                        
+        print("  MusicDB is ok")
+                    
+            
+        
+    def checkDBID(self, dbName, artistID, artistName):
+        if self.reverseDB[dbName].get(artistID) is not None:
+            print("DBID [{0}] for DB [{1}] already exists for Artist [{2}] and trying to set to [{3}]".format(dbName, artistID, artistName, self.reverseDB[dbName][artistID]))
+            
+
+    def fillReverseDB(self):
+        self.reverseDB = {db: {} for db in self.getDBs()}
+        for myArtistName in self.musicmap.keys():
+            artistData = self.getArtistData(myArtistName)
+            for db, dbData in artistData.items():
+                if not isinstance(dbData, dict):
+                    continue
+                dbID = dbData.get("ID")
+                if dbID is None:
+                    continue
+                else:
+                    try:
+                        dbID = str(int(dbID))
+                    except:
+                        raise ValueError("Problem with DBID: {0} for Artist {1}".format(dbID, myArtistName))
+
+                if self.reverseDB[db].get(dbID) is not None:
+                    print("Multiple Values For DB ID: {0} and DB: {1}".format(dbID, db))
+                    print("Values are [{0}, {1}]".format(myArtistName, self.reverseDB[db][dbID]))
+                    self.musicmap = self.initArtistDB(myArtistName, db)
+                    self.musicmap = self.initArtistDB(self.reverseDB[db][dbID], db)
+                    
+                self.reverseDB[db][dbID] = myArtistName
+        print("  Reverse MusicDB is ok")
+        
             
             
     def checkDB(self, db, artist=None):
@@ -65,6 +171,16 @@ class myMusicDBMap():
                 artist = "?"
             raise ValueError("Database ID [{0}] is not an integer (DB is {1} and Artist is {2})".format(dbID, db, artist))            
             
+    def fixDB(self):
+        for myArtistName in self.musicmap.keys():
+            artistData = self.getArtistData(myArtistName)
+            for db in artistData.keys():
+                dbData = artistData[db]
+                if not isinstance(dbData, dict):
+                    print("Fixing {0}, {1}".format(myArtistName, db))
+                    self.initArtistDB(myArtistName, db)
+        #self.save()
+                    
             
     def get(self):
         if self.debug:
@@ -108,8 +224,18 @@ class myMusicDBMap():
         
 
     def initKey(self, db):
-        for myArtistName in self.musicmap.keys():
-            self.musicmap[myArtistName][db] = None
+        for myArtistName in self.musicmap.keys():            
+            self.musicmap[myArtistName][db] = self.artistIDElement
+        return self.musicmap
+        
+
+    def initArtist(self, artistName):
+        self.musicmap[artistName] = {db: self.artistIDElement for db in self.getDBs()}
+        return self.musicmap
+        
+
+    def initArtistDB(self, artistName, db):
+        self.musicmap[artistName][db] = self.artistIDElement
         return self.musicmap
         #self.saveMyMusicMap()
         
@@ -146,13 +272,31 @@ class myMusicDBMap():
     def addArtist(self, artistName):
         if self.musicmap.get(artistName) is None:
             print("Adding Artist {0}".format(artistName))
-            self.musicmap[artistName] = {db: None for db in self.getDBs()}
+            self.musicmap[artistName] = {db: self.artistIDElement for db in self.getDBs()}
             print("\t",self.musicmap[artistName])
+            
+       
+    def ignoreList(self, dbName):
+        ignores = []
+        if dbName == "AllMusic":
+            ignores  = ["Bryan Adams", "Leslie Keith", "Patrick Swayze", "David Frizzell & Shelly West", "Matt Monroe"]
+            ignores += ["Antonio Vivaldi", "Franz Liszt", "Georges Bizet", "Hector Berlioz", "Richard Wagner"]
+            ignores += ["Robert Schumann"]        
+        return ignores
         
         
     def add(self, artistName, dbName, artistID):
-        self.checkDB(dbName)
+        if artistID is None:
+            print("Not Adding None ArtistID")
+            return
+        
+        self.checkDB(dbName)        
         self.checkID(artistID)
+        
+        ignores = self.ignoreList(dbName)
+        if artistName in ignores:
+            print("Not adding [{0}] because it's on the ignore list".format(artistName)
+            continue
         
         try:
             int(artistID)
@@ -162,12 +306,15 @@ class myMusicDBMap():
         if self.musicmap.get(artistName) is None:
             self.addArtist(artistName)
         dbData = self.musicmap[artistName].get(dbName)
+        
         if dbData is None:
             print("Adding Database [{0}] to DB list for [{1}]".format(dbName, artistName))
-            self.musicmap[artistName][dbName] = {"ID": None, "Name": None}
-        else:
+            self.musicmap[artistName][dbName] = self.artistIDElement
+        else:            
             if self.musicmap[artistName][dbName]["ID"] != artistID:
                 print("  Replacing ID for DB [{0}] from [{1}] to [{2}]".format(dbName, self.musicmap[artistName][dbName]["ID"], artistID))
+            
+        self.checkDBID(dbName, artistID, artistName)
         self.musicmap[artistName][dbName] = {"ID": artistID, "Name": None}
         print("Artist DB Data: {0}".format(self.musicmap[artistName]))
         
