@@ -49,13 +49,22 @@ class myMusicArtistDBData(myMusicDBs):
 
         
 class myMusicDBMap:
-    def __init__(self, debug=False, overwrite=False):
+    def __init__(self, source, debug=False, overwrite=False):
+        self.source=source
         self.debug=debug
         if debug:
             print("Creating myMusicDBMap()")
             
-
-        self.mapfilename = 'myMusicMap.p'
+    
+        if source == "Music":
+            self.mapfilename = 'myMusicMap.p'
+        elif source == "Discogs":
+            self.mapfilename = 'dbMusicMap.p'
+        elif source == "Charts":
+            self.mapfilename = 'chartMusicMap.p'
+        else:
+            raise ValueError("My MusicDB Map must be [Music, Discogs, Charts]")
+            
         self.mapname     = join(prefix, 'musicdb', self.mapfilename)
         
         
@@ -90,14 +99,23 @@ class myMusicDBMap:
         self.fillReverseDB()
         
         
-    def assertDBQuality(self, fix=False):
+    def assertDBQuality(self, fix=True):
+        nFixes = 0
         for myArtistName in self.musicmap.keys():
             artistData = self.getArtistData(myArtistName)
-            for db in artistData.keys():
-                dbdata = artistData[db]
+            for db in self.dbkeys:
+                try:
+                    dbdata = artistData[db]
+                except:
+                    if fix is True:
+                        self.musicmap[myArtistName][db] = self.artistIDElement
+                        nFixes += 1
+                    else:
+                        raise ValueError("Error with [{0}] and DB [{1}] set to None!".format(myArtistName, db))
                 if dbdata is None:
                     if fix is True:
-                        self.initArtistDB(myArtistName, db)
+                        self.musicmap[myArtistName] = {db: self.artistIDElement for db in self.getDBs()}
+                        nFixes += 1
                     else:
                         raise ValueError("Error with [{0}] and DB [{1}] set to None!".format(myArtistName, db))
                 else:
@@ -114,6 +132,8 @@ class myMusicDBMap:
                     except:
                         raise ValueError("Error with [{0}] and DB [{1}] set to [{2}]!".format(myArtistName, db, dbdata))
                         
+        if fix is True and nFixes > 0:
+            self.save()
         print("  MusicDB is ok")
                     
             
@@ -295,8 +315,8 @@ class myMusicDBMap:
         
         ignores = self.ignoreList(dbName)
         if artistName in ignores:
-            print("Not adding [{0}] because it's on the ignore list".format(artistName)
-            continue
+            print("Not adding [{0}] because it's on the ignore list".format(artistName))
+            return
         
         try:
             int(artistID)
