@@ -67,6 +67,20 @@ class myMusicArtistDBData(myMusicDBs):
     def getSeries(self):
         sdata = Series({db: dbIDdata.dbID for db,dbIDdata in self.dbdata.items()})
         return sdata
+    
+    def getDBData(self, db):
+        if self.dbdata.get(db) is not None:
+            return self.dbdata[db]
+        return None
+            
+    def getDBID(self, db):
+        if self.dbdata.get(db) is not None:
+            return self.dbdata[db].dbID
+        return None    
+    
+    def getDict(self):
+        dfdata = {db: dbIDdata.dbID for db,dbIDdata in self.dbdata.items()}
+        return dfdata
         
     def getDF(self):
         dfdata = DataFrame(Series({db: dbIDdata.dbID for db,dbIDdata in self.dbdata.items()}))
@@ -107,6 +121,18 @@ class musicDBMap:
         
     def clean(self):
         self.musicmap = {}
+        
+    def stats(self):
+        stats = {}        
+        for primaryKey,dbData in self.musicmap.items():
+            for db,dbID in dbData.getDict().items():
+                if stats.get(db) is None:
+                    stats[db] = 0
+                if dbID is not None:
+                    stats[db] += 1
+        print("{0: <20}{1: <7}{2}".format("", "Counts", "Fraction"))        
+        for db,stat in stats.items():
+            print("{0: <20}{1: <7}{2: >2}".format(db, stat, int(round(100*stat/len(self.musicmap), 0))))
         
     def update(self, dbdump):
         if not isinstance(dbdump, dict):
@@ -168,6 +194,16 @@ class musicDBMap:
     def getPrimaryKey(self, artistName, artistID):
         return (artistName, artistID)
     
+    def getPrimaryKeyFromID(self, artistID):
+        primaryKeys = []
+        for primaryKey in self.getArtists():
+            if primaryKey[1] == artistID:
+                primaryKeys.append(primaryKey)
+        if len(primaryKeys) != 1:
+            print("Could not get PrimaryKey from AritsID [{0}]".format(artistID))
+            return None
+        return primaryKeys[0]
+    
     def isKnownKey(self, primaryKey):
         if self.musicmap.get(primaryKey) is None:
             return False
@@ -175,9 +211,7 @@ class musicDBMap:
         
     def isKnown(self, artistName, artistID):
         primaryKey = self.getPrimaryKey(artistName, artistID)
-        if self.musicmap.get(primaryKey) is None:
-            return False
-        return True
+        return self.isKnownKey(primaryKey)
     
     def addArtist(self, artistName, artistID=None):
         if artistID is None:
@@ -208,6 +242,13 @@ class musicDBMap:
             artistID = self.getHash(artistName)
         primaryKey = self.getPrimaryKey(artistName, artistID)
         if not self.isKnown(artistName, artistID):
+            if self.debug:
+                print("Can not get artist data ({0}) because it is not known".format(primaryKey))
+        return self.musicmap[primaryKey]
+           
+    def getArtistDataByID(self, artistID):
+        primaryKey = self.getPrimaryKeyFromID(artistID)        
+        if not self.isKnownKey(primaryKey):
             if self.debug:
                 print("Can not get artist data ({0}) because it is not known".format(primaryKey))
         return self.musicmap[primaryKey]
