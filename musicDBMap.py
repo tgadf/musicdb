@@ -6,94 +6,11 @@ from os.path import join
 from sys import prefix
 from artistDB import artistDB
 from pandas import Series, DataFrame
-from hashlib import md5
 
-
-class myMusicDBs:
-    def __init__(self):
-        self.dbs = ["Discogs", "AllMusic", "MusicBrainz", "AceBootlegs", "RateYourMusic", "LastFM", "DatPiff", "RockCorner", "CDandLP", "MusicStack", "MetalStorm"]
-    
-    def isValid(self, db):
-        return db in self.dbs
-    
-    def getDBs(self):
-        return self.dbs
-        
-        
-        
-
-class myMusicDBIDData:
-    def __init__(self, dbID=None):
-        self.dbID = None
-        self.name = None
-        
-    def add(self, dbID, name=None):
-        if dbID is None:
-            self.dbID = dbID
-            self.name = name
-            return
-        
-        try:
-            str(int(dbID))
-        except:
-            raise ValueError("Cannot set dbID to {0}".format(dbID))
-            
-        self.dbID = str(dbID)
-        self.name = name
-        
-    def get(self):
-        return (self.dbID,self.name)
-            
-        
-        
-
-class myMusicArtistDBData(myMusicDBs):
-    def __init__(self):
-        myMusicDBs.__init__(self)
-        self.init()
-        
-    def init(self):
-        self.dbdata = {db: myMusicDBIDData() for db in self.getDBs()}
-        
-    def add(self, db, dbID=None):
-        assert self.isValid(db)
-        self.dbdata[db].add(dbID, name=None)
-        
-    def show(self):
-        print("{0: <20}{1}".format("DB", "Value"))
-        for db,dbIDdata in self.dbdata.items():
-            print("{0: <20}{1}".format(db,dbIDdata.get()))
-            
-    def getSeries(self):
-        sdata = Series({db: dbIDdata.dbID for db,dbIDdata in self.dbdata.items()})
-        return sdata
-    
-    def getDBData(self, db):
-        if self.dbdata.get(db) is not None:
-            return self.dbdata[db]
-        return None
-            
-    def getDBID(self, db):
-        if self.dbdata.get(db) is not None:
-            return self.dbdata[db].dbID
-        return None    
-    
-    def getDict(self):
-        dfdata = {db: dbIDdata.dbID for db,dbIDdata in self.dbdata.items()}
-        return dfdata
-        
-    def getDF(self):
-        dfdata = DataFrame(Series({db: dbIDdata.dbID for db,dbIDdata in self.dbdata.items()}))
-        return dfdata
-        
-    def get(self):
-        return self.dbdata
-    
-    
-
+from musicDBArtistMap import myMusicArtistDBData, musicDBKey
 
 class musicDBMap:
-    def __init__(self, source, debug=False, init=False):
+    def __init__(self, source, debug=False, init=False, copy=False):
         self.source=source
         self.debug=debug
         if debug:
@@ -101,6 +18,8 @@ class musicDBMap:
 
         #### Database locations
         self.setMapname(source)
+        self.mdbKey = musicDBKey(source)
+        
         
         #### Load Previous Matches
         if init is True:
@@ -166,7 +85,7 @@ class musicDBMap:
     # Lists / DF / Series
     ###################################################################################################
     def getArtists(self):
-        return list(self.musicmap.keys())
+        return list(self.musicmap.values())
     
     def getDF(self):
         dfdata = DataFrame({primaryKey: artistData.getSeries() for primaryKey,artistData in self.musicmap.items()})
@@ -185,85 +104,118 @@ class musicDBMap:
     ###################################################################################################
     # Primary Key (Artist <-> Hash)
     ###################################################################################################
-    def getHash(self, name):
-        m = md5()
-        m.update(name.encode('utf-8'))
-        retval = m.hexdigest()
-        return retval
-    
-    def getPrimaryKey(self, artistName, artistID):
-        return (artistName, artistID)
-    
-    def getPrimaryKeyFromID(self, artistID):
-        primaryKeys = []
-        for primaryKey in self.getArtists():
-            if primaryKey[1] == artistID:
-                primaryKeys.append(primaryKey)
-        if len(primaryKeys) != 1:
-            print("Could not get PrimaryKey from AritsID [{0}]".format(artistID))
-            return None
-        return primaryKeys[0]
-    
-    def isKnownKey(self, primaryKey):
+    def getPrimaryKey(self, artistName=None, artistID=None):
+        primaryKey = self.mdbKey.getKey(artistName=artistName, artistID=artistID)
+        return primaryKey
+        
+    def isKnownByKey(self, primaryKey):
         if self.musicmap.get(primaryKey) is None:
             return False
         return True
-        
-    def isKnown(self, artistName, artistID):
-        primaryKey = self.getPrimaryKey(artistName, artistID)
-        return self.isKnownKey(primaryKey)
     
-    def addArtist(self, artistName, artistID=None):
-        if artistID is None:
-            artistID = self.getHash(artistName)
-        primaryKey = self.getPrimaryKey(artistName, artistID)
-        if not self.isKnown(artistName, artistID):
-            self.musicmap[primaryKey] = myMusicArtistDBData()
-        else:
-            if self.debug:
-                print("Will not add artist ({0}) because it is already known".format(primaryKey))
+    def isKnownByName(self, artistName):
+        primaryKey = self.getPrimaryKey(artistName=artistName, artistID=None)
+        return self.isKnownByKey(primaryKey)
+    
+    def isKnownByID(self, artistID):
+        primaryKey = self.getPrimaryKey(artistName=None, artistID=artistID)
+        return self.isKnownByKey(primaryKey)
+    
+    
+    ###################################################################################################
+    # Add/Remove Artists
+    ###################################################################################################
+    def addArtistByKey(self, primaryKey, artistName=None, artistID=None):
+        if not self.isKnownByKey(primaryKey):
+            print("Adding PrimaryKey: {0}".format(primaryKey))
+            self.musicmap[primaryKey] = myMusicArtistDBData(primaryKey=primaryKey, artistName=artistName, artistID=artistID)
             
-    def removeArtist(self, artistName, artistID=None):
-        if artistID is None:
-            artistID = self.getHash(artistName)
-        primaryKey = self.getPrimaryKey(artistName, artistID)
-        if not self.isKnown(artistName, artistID):
-            if self.debug:
-                print("Will not remove artist ({0}) because it is not known".format(primaryKey))
-        del self.musicmap[primaryKey]
+    def removeArtistByKey(self, primaryKey):
+        if self.isKnownByKey(primaryKey):
+            print("Removing PrimaryKey: {0}".format(primaryKey))
+            del self.musicmap[primaryKey]
+        else:
+            print("Could not remove PrimaryKey: {0}".format(primaryKey))
+            
+    def addArtistByName(self, artistName):
+        primaryKey = self.getPrimaryKey(artistName=artistName)
+        if not self.isKnownByKey(primaryKey):
+            print("Adding PrimaryKey (From Name [{0}]): {1}".format(artistName, primaryKey))
+            self.musicmap[primaryKey] = myMusicArtistDBData(primaryKey=primaryKey, artistName=artistName, artistID=None)
         
+    def removeArtistByName(self, artistName):
+        primaryKey = self.getPrimaryKey(artistName=artistName)
+        if self.isKnownByKey(primaryKey):
+            print("Removing PrimaryKey (From Name [{0}]): {1}".format(artistName, primaryKey))
+            del self.musicmap[primaryKey]
+        else:
+            print("Could not remove PrimaryKey From Name: {0}".format(artistName))
         
+    def addArtistByID(self, artistName):
+        primaryKey = self.getPrimaryKey(artistID=artistID)
+        if not self.isKnownByKey(primaryKey):
+            print("Adding PrimaryKey (From ID [{0}]): {1}".format(artistID, primaryKey))
+            self.musicmap[primaryKey] = myMusicArtistDBData(primaryKey=primaryKey, artistName=None, artistID=artistID)
         
+    def removeArtistByID(self, artistID):
+        primaryKey = self.getPrimaryKey(artistID=artistID)
+        if self.isKnownByKey(primaryKey):
+            print("Removing PrimaryKey (From ID [{0}]): {1}".format(artistID, primaryKey))
+            del self.musicmap[primaryKey]
+        else:
+            print("Could not remove PrimaryKey From ID: {0}".format(artistID))
+        
+    
     ###################################################################################################
-    # Secondary Key (Artist DB Data)
+    # Add/Remove Artist Data
     ###################################################################################################
-    def getArtistData(self, artistName, artistID=None):
-        if artistID is None:
-            artistID = self.getHash(artistName)
-        primaryKey = self.getPrimaryKey(artistName, artistID)
-        if not self.isKnown(artistName, artistID):
-            if self.debug:
-                print("Can not get artist data ({0}) because it is not known".format(primaryKey))
-        return self.musicmap[primaryKey]
-           
+    def getArtistDataByKey(self, primaryKey):
+        if self.isKnownByKey(primaryKey):
+            return self.musicmap[primaryKey]
+        else:
+            print("Could not find artist data from PrimaryKey: {0}".format(primaryKey))
+        return None
+            
+    def addArtistDataByKey(self, primaryKey, db, dbID):
+        if self.isKnownByKey(primaryKey):
+            self.musicmap[primaryKey].add(db, dbID)
+            print("Added DB/ID [{0}/{1}] to Primary Key: {2}".format(db, dbID, primaryKey))
+        else:
+            print("Could not add artist data from PrimaryKey: {0}".format(primaryKey))
+            
+            
+    def getArtistDataByName(self, artistName):
+        primaryKey = self.getPrimaryKey(artistName=artistName, artistID=None)
+        if self.isKnownByKey(primaryKey):
+            return self.musicmap[primaryKey]
+        else:
+            print("Could not find artist data from PrimaryKey (From Name [{0}]): {1}".format(artistName, primaryKey))
+        return None
+            
+    def addArtistDataByName(self, artistName, db, dbID):
+        primaryKey = self.getPrimaryKey(artistName=artistName, artistID=None)
+        if self.isKnownByKey(primaryKey):
+            self.musicmap[primaryKey].add(db, dbID)
+            print("Added DB/ID [{0}/{1}] to Primary Key: {2}".format(db, dbID, primaryKey))
+        else:
+            print("Could not add artist data from PrimaryKey (From Name [{0}]): {1}".format(artistName, primaryKey))
+            
     def getArtistDataByID(self, artistID):
-        primaryKey = self.getPrimaryKeyFromID(artistID)        
-        if not self.isKnownKey(primaryKey):
-            if self.debug:
-                print("Can not get artist data ({0}) because it is not known".format(primaryKey))
-        return self.musicmap[primaryKey]
-           
-    def add(self, artistName, artistID, db, dbID):
-        self.addArtistData(artistName, artistID, db, dbID)
-        
-    def addArtistData(self, artistName, artistID, db, dbID):
-        if artistID is None:
-            artistID = self.getHash(artistName)
-        primaryKey = self.getPrimaryKey(artistName, artistID)
-        if not self.isKnown(artistName, artistID):
-            if self.debug:
-                print("Can not add artist data ({0}) because it is not known".format(primaryKey))
-        self.musicmap[primaryKey].add(db, dbID)
+        primaryKey = self.getPrimaryKeyFrom(artistName=None, artistID=artistID)
+        if self.isKnownByKey(primaryKey):
+            return self.musicmap[primaryKey]
+        else:
+            print("Could not find artist data from PrimaryKey (From ID [{0}]): {1}".format(artistID, primaryKey))
+        return None
+            
+    def addArtistDataByID(self, artistID, db, dbID):
+        primaryKey = self.getPrimaryKey(artistName=None, artistID=artistID)
+        if self.isKnownByKey(primaryKey):
+            self.musicmap[primaryKey].add(db, dbID)
+            print("Added DB/ID [{0}/{1}] to Primary Key: {2}".format(db, dbID, primaryKey))
+        else:
+            print("Could not add artist data from PrimaryKey (From ID [{0}]): {1}".format(artistID, primaryKey))
+            
         
         
         

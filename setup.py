@@ -39,7 +39,7 @@ setup(
   py_modules = ['myMusicDBMap', 'artistDB', 'mergeDB', 'musicData', 'musicDBData', 'musicArtistData', 'musicDBMap'],
   cmdclass={'install': InstallWrapper},
   version = '0.0.1',
-  data_files = [(os.path.join(sys.prefix, 'musicdb'), ['myMusicMap.p', 'musicData.yaml'])],
+  data_files = [(os.path.join(sys.prefix, 'musicdb'), ['myMusicMap.p'])],
   description = 'A Python Wrapper for Music DB Data',
   long_description = open('README.md').read(),
   author = 'Thomas Gadfort',
