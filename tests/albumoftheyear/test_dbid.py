@@ -1,0 +1,1 @@
+from musicdb.albumoftheyear import MusicDBIDdef test_dbid():    mdbid = MusicDBID()        url = 'https://www.albumoftheyear.org/artist/9000-lolita-storm/'    dbid = mdbid.getArtistID(url)    assert dbid == '9000'

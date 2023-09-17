@@ -1,0 +1,1 @@
+from musicdb.albumoftheyear import MusicDBIOdef test_concatdata():    mdbio = MusicDBIO()        for concatKey, concatFunc in mdbio.cdio.concatFuncs.items():        assert callable(concatFunc), f"concatFunc [{concatFunc}] is not callable"        concatFunc(modVal=0, test=True, verbose=True)     if __name__ == "__main__":    test_concatdata()

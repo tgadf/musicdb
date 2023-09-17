@@ -1,0 +1,1 @@
+from musicdb.albumoftheyear import MusicDBIOdef test_parsedata():    mdbio = MusicDBIO()        for parseKey, parseFunc in mdbio.pdio.parseFuncs.items():        assert callable(parseFunc), f"parseFunc [{parseFunc}] is not callable"        parseFunc(modVal=0, test=True, verbose=True)     if __name__ == "__main__":    test_parsedata()

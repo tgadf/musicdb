@@ -1,0 +1,1 @@
+from musicdb.albumoftheyear import MusicDBIOdef test_mergedata():    mdbio = MusicDBIO()        for mergeKey, mergeFunc in mdbio.mdio.mergeFuncs.items():        assert callable(mergeFunc), f"mergeFunc [{mergeFunc}] is not callable"        mergeFunc(modVal=0, test=True, verbose=True)     if __name__ == "__main__":    test_mergedata()

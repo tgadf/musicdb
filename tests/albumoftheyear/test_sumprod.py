@@ -1,0 +1,1 @@
+from dbbase import MusicDBRootDataIOfrom dbmeta import SummaryProducerIOfrom musicdb.albumoftheyear import MusicDBParamsdef test_sumprod():    params = MusicDBParams()    rdio = MusicDBRootDataIO(db=params.db, verbose=True)        sumprodio = SummaryProducerIO(rdio, verbose=True)    sumprodio.make(test=True)    if __name__ == "__main__":    test_sumprod()    

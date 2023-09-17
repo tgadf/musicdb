@@ -1,0 +1,1 @@
+from musicdb.albumoftheyear import RawDataIOfrom musicdb.albumoftheyear import RawWebDatadef test_rawweb():    rdio = RawDataIO()    rwio = RawWebData()    assert rwio.name == rdio.dbdef test_rawdata():    rdio = RawDataIO()    assert hasattr(rdio, 'mutils'), "rio does not have a MediaUtils"if __name__ == "__main__":    test_rawweb()    test_rawdata
